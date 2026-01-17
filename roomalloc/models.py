@@ -19,8 +19,19 @@ class Student(models.Model):
 
 class Booking(models.Model):
 	bookingID = models.AutoField(primary_key=True, unique=True)
-	BookingRoom = models.ForeignKey(Room, on_delete=models.RESTRICT) # references the roomID key (can be changed). remember while implementing later
-	BookingBy = models.ForeignKey(Student, on_delete=models.RESTRICT) # references the rollno key (can be changed). remember while implementing later
+	bookingRoom = models.ForeignKey(Room, on_delete=models.RESTRICT) # references the roomID key (can be changed). remember while implementing later
+	bookingBy = models.ForeignKey(Student, on_delete=models.RESTRICT) # references the rollno key (can be changed). remember while implementing later
+	slot=models.ForeignKey(Slot, on_delete=models.RESTRICT)
 
 	def __str__(self):
 		return (f"Booking ID: {self.bookingID}, Room: {self.BookingRoom}, Student: {self.BookingBy}")
+	
+class Slot(models.Model):
+	slotID=models.AutoField(primary_key=True, unique=True)
+	startTime=models.DateTimeField()
+	endTime=models.DateTimeField()
+	isAvailable=models.BooleanField(default=True)
+
+	def __str__(self):
+		return (f"Start Time:{self.startTime}, End Time:{self.endTime}, Availability:{self.isAvailable}")
+
