@@ -9,6 +9,7 @@ django = "==4.2.27"
 djangorestframework = "==3.16.1"
 sqlparse = "==0.5.5"
 typing-extensions = "==4.15.0"
+django-cors-headers = "*"
 
 [dev-packages]
 
