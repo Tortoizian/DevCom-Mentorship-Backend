@@ -13,15 +13,26 @@ class Student(models.Model):
 	rollno = models.CharField(max_length=10, primary_key=True)
 	student_name = models.CharField(max_length=100)
 	student_dept = models.CharField(max_length=64)
+	email = models.EmailField(max_length=254, unique=True, null=True, blank=True)
 
 	def __str__(self):
-		return (f"Roll No.: {self.rollno}, Name: {self.student_name}, Department: {self.student_dept}")
+		return (f"Roll No.: {self.rollno}, Name: {self.student_name}, Department: {self.student_dept}, Email: {self.email}")
 
 
 class Slot(models.Model):
 	slot_id = models.AutoField(primary_key=True, unique=True)
 	start_time = models.DateTimeField()
 	end_time = models.DateTimeField()
+	DAY_CHOICES = [
+        ('MON', 'Monday'),
+        ('TUE', 'Tuesday'),
+        ('WED', 'Wednesday'),
+        ('THU', 'Thursday'),
+        ('FRI', 'Friday'),
+        ('SAT', 'Saturday'),
+        ('SUN', 'Sunday'),
+    ]
+	day = models.CharField(max_length=64,choices=DAY_CHOICES)
 	#is_available needed?
 
 	def __str__(self):
