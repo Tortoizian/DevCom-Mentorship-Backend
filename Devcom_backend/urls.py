@@ -16,11 +16,22 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path, include
-# from django.conf.urls import url
+from django.urls import path, include, re_path
+from django.views.generic import TemplateView
 from roomalloc.views import *
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-	path('', StudentView.as_view(), name='test')
+	path("api-auth/", include("rest_framework.urls")),
+	path("register", SignupView.as_view()),
+	path("csrf_cookie", GetCSRFToken.as_view()),
+	path("authenticated", CheckAuthenticatedView.as_view()),
+	path("login", LoginView.as_view()),
+	path("logout", LogoutView.as_view()),
+	# path("delete", DeleteUserView.as_view()), # see if this is required or not
+	path("get_users", GetUsersView.as_view()),
+
+	path('', StudentView.as_view(), name='test'),
 ]
+
+urlpatterns += [re_path(r'^.*', TemplateView.as_view(template_name='index.html'))] # catchall for react router. index.html is in build folder
