@@ -22,5 +22,10 @@ from roomalloc.views import *
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-	path('', StudentView.as_view(), name='test')
+	path('student/', StudentView.as_view(), name='student'),
+	path('', home_view, name='home'),
+    path('accounts/login/', login_view, name='login'),
+    path('accounts/logout/', logout_view, name='logout'),
+    path('accounts/register/', register_view, name='register'),
+    path('protected', ProtectedView.as_view(), name='protected'),
 ]

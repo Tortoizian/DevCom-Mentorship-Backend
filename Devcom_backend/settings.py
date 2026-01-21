@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -62,7 +63,7 @@ ROOT_URLCONF = "Devcom_backend.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [], # add os.path.join(BASE_DIR, "build")
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -123,3 +124,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
+
+STATICFILESDIRS = (
+    os.path.join(BASE_DIR, 'static')
+)
+
+LOGIN_REDIRECT_URL = 'home'
