@@ -32,6 +32,9 @@ urlpatterns = [
 	path("get_users", GetUsersView.as_view()),
 
 	path('', StudentView.as_view(), name='test'),
+	path('bookings/<str:rollno>/', StudentBookings.as_view(), name='student_bookings'),
+	path('room/', RoomView.as_view(), name='room'),
+	path('slot/', SlotView.as_view(), name='slot'),
 ]
 
 urlpatterns += [re_path(r'^.*', TemplateView.as_view(template_name='index.html'))] # catchall for react router. index.html is in build folder

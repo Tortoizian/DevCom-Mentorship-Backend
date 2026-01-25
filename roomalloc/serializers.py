@@ -11,7 +11,7 @@ class UserSerializer(serializers.ModelSerializer):
 class RoomSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Room
-		fields = ['roomid', 'room_name', 'room_capacity', 'is_booked']
+		fields = ['room_id', 'room_name', 'room_capacity', 'is_booked']
 
 		def validate_room_capacity(self, value):
 			if value < 0:
@@ -64,3 +64,5 @@ class BookingSerializer(serializers.ModelSerializer):
 		# ensure the slot exists
 		if not Slot.objects.filter(slot_id=slot.slot_id).exists():
 			raise serializers.ValidationError("The selected slot does not exist.")
+		
+		return data

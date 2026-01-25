@@ -107,7 +107,7 @@ class GetUsersView(APIView):
 
 # Other views
 
-class StudentView(APIView):
+class StudentView(APIView): # just for testing purposes
 	serializer_class = StudentSerializer
 
 	def get(self, request : HttpRequest):
@@ -120,15 +120,37 @@ class StudentView(APIView):
 			serializer.save()
 			return Response(serializer.data)
 
-class StudentBookings(APIView): 
-	def get(self,request : HttpRequest, rollno): #Using built-in /<int:rollno>
-		output=[{'Room': output.booking_room,'Slot': output.slot} for output in Booking.objects.filter(rollno=rollno)]
+class StudentBookings(APIView):
+	serializer_class = BookingSerializer
+
+	def get(self,request : HttpRequest, rollno): #Using built-in /<str:rollno>
+		output=[{'Room': output.booking_room,'Slot': output.slot} for output in Booking.objects.filter(booking_by=rollno)]
 		return Response(output)
 
-class RoomView(APIView):
-	def get(self,request : HttpRequest): #Using query paramteres for datetime, GET /bookings/?date=2026-01-25&time=14:30
-			try:
+	def post(self, request : HttpRequest, *args, **kwargs):
+		serializer = BookingSerializer(data=request.data)
+		if serializer.is_valid(raise_exception=True):
+			serializer.save()
+			return Response(serializer.data)
 
+class SlotView(APIView):
+	serializer_class = SlotSerializer
+
+	def get(self,request : HttpRequest):
+		output = [{'slot_id': output.slot_id, 'start_time': output.start_time, 'end_time': output.end_time, 'day': output.day} for output in Slot.objects.all()]
+		return Response(output)
+
+	def post(self, request : HttpRequest):
+		serializer = SlotSerializer(data=request.data)
+		if serializer.is_valid(raise_exception=True):
+			serializer.save()
+			return Response(serializer.data)
+
+class RoomView(APIView):
+	serializer_class = RoomSerializer
+
+	def get(self,request : HttpRequest): #Using query paramteres for datetime, GET /bookings/?start-dt=2025-01-25T14:30:00&end-dt=2025-01-25T15:00:00
+			try:
 				start_dt = datetime.fromisoformat(request.query_params.get('start-dt'))
 				end_dt=datetime.fromisoformat(request.query_params.get('end-dt'))
 				overlapped_bookings=Booking.objects.filter(Q(slot__start_time__lt=end_dt) & Q(slot__end_time__gt=start_dt)) #getting bookings that overlap with start_dt to end_dt
@@ -136,15 +158,11 @@ class RoomView(APIView):
 				avail_rooms=Room.objects.exclude(room_id__in=booked_room_ids)
 				serializer = RoomSerializer(avail_rooms, many=True)
 				return Response({'available_rooms': serializer.data})
-
-
-			except ValueError:
+			except:
 				return Response({'error' : 'Use datetime in ISO format'}, status=400)
 
-		
-		
-
-		
-
-
-
+	def post(self, request : HttpRequest):
+		serializer = RoomSerializer(data=request.data)
+		if serializer.is_valid(raise_exception=True):
+			serializer.save()
+			return Response(serializer.data)
