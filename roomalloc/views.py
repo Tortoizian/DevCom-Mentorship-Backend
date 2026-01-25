@@ -5,10 +5,13 @@ from .models import *
 from .serializers import *
 from rest_framework.response import Response
 from rest_framework import permissions
+from django.db.models import Q
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
+from datetime import datetime
+
 
 # Auth views
 
@@ -116,3 +119,32 @@ class StudentView(APIView):
 		if serializer.is_valid(raise_exception=True):
 			serializer.save()
 			return Response(serializer.data)
+
+class StudentBookings(APIView): 
+	def get(self,request : HttpRequest, rollno): #Using built-in /<int:rollno>
+		output=[{'Room': output.booking_room,'Slot': output.slot} for output in Booking.objects.filter(rollno=rollno)]
+		return Response(output)
+
+class RoomView(APIView):
+	def get(self,request : HttpRequest): #Using query paramteres for datetime, GET /bookings/?date=2026-01-25&time=14:30
+			try:
+
+				start_dt = datetime.fromisoformat(request.query_params.get('start-dt'))
+				end_dt=datetime.fromisoformat(request.query_params.get('end-dt'))
+				overlapped_bookings=Booking.objects.filter(Q(slot__start_time__lt=end_dt) & Q(slot__end_time__gt=start_dt)) #getting bookings that overlap with start_dt to end_dt
+				booked_room_ids = overlapped_bookings.values_list('booking_room_id', flat=True)
+				avail_rooms=Room.objects.exclude(room_id__in=booked_room_ids)
+				serializer = RoomSerializer(avail_rooms, many=True)
+				return Response({'available_rooms': serializer.data})
+
+
+			except ValueError:
+				return Response({'error' : 'Use datetime in ISO format'}, status=400)
+
+		
+		
+
+		
+
+
+
