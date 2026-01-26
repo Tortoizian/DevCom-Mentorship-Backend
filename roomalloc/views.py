@@ -131,8 +131,6 @@ class StudentBookings(APIView): #for viewing a specific student's bookings and m
 		else:
 			bookings = Booking.objects.all()
 		serializer=BookingSerializer(bookings, many=True)
-		
-		
 		return Response(serializer.data)
 
 	def post(self, request : HttpRequest, *args, **kwargs):
@@ -175,33 +173,28 @@ class SlotView(APIView): #optional for now
 			serializer.save()
 			return Response(serializer.data)
 
-class AvailRoomView(APIView): #This view is for viewing only available room views(in a slot)
+class RoomView(APIView): #This view is for viewing only available room views(in a slot)
 	serializer_class = RoomSerializer
 
 	def get(self,request : HttpRequest): #Using query paramteres for datetime, GET /bookings/?start-dt=2025-01-25T14:30:00&end-dt=2025-01-25T15:00:00
 			try:
-				start_dt = datetime.fromisoformat(request.query_params.get('start-dt'))
-				end_dt=datetime.fromisoformat(request.query_params.get('end-dt'))
-				overlapped_bookings=Booking.objects.filter(Q(slot__start_time__lt=end_dt) & Q(slot__end_time__gt=start_dt)) #getting bookings that overlap with start_dt to end_dt
-				booked_room_ids = overlapped_bookings.values_list('booking_room_id', flat=True)
-				avail_rooms=Room.objects.exclude(room_id__in=booked_room_ids)
-				serializer = RoomSerializer(avail_rooms, many=True)
-				return Response({'available_rooms': serializer.data})
+				if request.query_params.get('start-dt'):
+					start_dt = datetime.fromisoformat(request.query_params.get('start-dt'))
+					end_dt=datetime.fromisoformat(request.query_params.get('end-dt'))
+					overlapped_bookings=Booking.objects.filter(Q(slot__start_time__lt=end_dt) & Q(slot__end_time__gt=start_dt)) #getting bookings that overlap with start_dt to end_dt
+					booked_room_ids = overlapped_bookings.values_list('booking_room_id', flat=True)
+					avail_rooms=Room.objects.exclude(room_id__in=booked_room_ids)
+					serializer = RoomSerializer(avail_rooms, many=True)
+					return Response({'available_rooms': serializer.data})
+				else:
+					Rooms = Room.objects.all()
+					serializer = RoomSerializer(Rooms, many=True)
+					return Response({'available_rooms': serializer.data})
 			except:
 				return Response({'error' : 'Use datetime in ISO format'}, status=400)
 
-	
-
-class RoomView(APIView): #This view is for displaying ALL rooms. Also for adding a new room to the db.
-
-	def get(self,request : HttpRequest):
-		Rooms = Room.objects.all()
-		serializer = RoomSerializer(Rooms, many=True)
-		return Response(serializer.data)
-	
 	def post(self, request : HttpRequest):
 		serializer = RoomSerializer(data=request.data)
 		if serializer.is_valid(raise_exception=True):
 			serializer.save()
 			return Response(serializer.data)
-		
