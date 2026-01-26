@@ -130,9 +130,10 @@ class StudentBookings(APIView): #for viewing a specific student's bookings and m
 			bookings = Booking.objects.filter(booking_by=rollno)
 		else:
 			bookings = Booking.objects.all()
+		serializer=BookingSerializer(bookings, many=True)
 		
-		output=[{'Room': output.booking_room,'Slot': output.slot} for output in bookings]
-		return Response(output)
+		
+		return Response(serializer.data)
 
 	def post(self, request : HttpRequest, *args, **kwargs):
 		serializer = BookingSerializer(data=request.data)
