@@ -7,7 +7,6 @@ class Room(models.Model):
 	room_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 	room_name = models.CharField(max_length=64)
 	room_capacity = models.IntegerField()
-	is_booked = models.BooleanField()
 
 	def __str__(self):
 		return (f"Room: {self.room_name}, Capacity: {self.room_capacity}")
