@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpRequest
+from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from .models import *
 from .serializers import *
@@ -139,7 +140,7 @@ class StudentBookings(APIView): #for viewing a specific student's bookings and m
 			data = serializer.validated_data
 			room = data.get('booking_room')
 			slot = data.get('slot')
-			user = data.get('booked_by')
+			user = data.get('booking_by')
 			#Check 1-Two rooms cannot be booked in overlapping slots
 			#prevent double booking: same room cannot be booked for any overlapping slot duration
 			if Booking.objects.filter(
