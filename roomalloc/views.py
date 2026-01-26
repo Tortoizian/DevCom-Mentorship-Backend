@@ -120,20 +120,47 @@ class StudentView(APIView): # just for testing purposes
 			serializer.save()
 			return Response(serializer.data)
 
-class StudentBookings(APIView):
+class StudentBookings(APIView): #for viewing a specific student's bookings and making a new booking.
 	serializer_class = BookingSerializer
 
-	def get(self,request : HttpRequest, rollno): #Using built-in /<str:rollno>
-		output=[{'Room': output.booking_room,'Slot': output.slot} for output in Booking.objects.filter(booking_by=rollno)]
+	def get(self,request : HttpRequest, *args, **kwargs): 
+		rollno = kwargs.get('rollno')
+		if(rollno):
+			bookings = Booking.objects.filter(booking_by=rollno)
+		else:
+			bookings = Booking.objects.all()
+		
+		output=[{'Room': output.booking_room,'Slot': output.slot} for output in bookings]
 		return Response(output)
 
 	def post(self, request : HttpRequest, *args, **kwargs):
 		serializer = BookingSerializer(data=request.data)
 		if serializer.is_valid(raise_exception=True):
+			data = serializer.validated_data
+			room = data.get('booking_room')
+			slot = data.get('slot')
+			user = data.get('booked_by')
+			#Check 1-Two rooms cannot be booked in overlapping slots
+			#prevent double booking: same room cannot be booked for any overlapping slot duration
+			if Booking.objects.filter(
+				booking_room=room
+			).filter(
+				Q(slot__start_time__lt=slot.end_time) & Q(slot__end_time__gt=slot.start_time)
+			).exists():
+				return Response({'error': 'Room is already booked under an interfering slot.'}, status=400)
+			
+			#Check 2- One user cannot have more than booking in overlapping slots
+
+			if Booking.objects.filter(
+				booking_by=user
+			).filter(
+				Q(slot__start_time__lt=slot.end_time) & Q(slot__end_time__gt=slot.start_time)
+			).exists():
+				return Response({'error' : 'One user cannot make 2 booking in an overlapping duration.'}, status=400)
 			serializer.save()
 			return Response(serializer.data)
 
-class SlotView(APIView):
+class SlotView(APIView): #optional for now
 	serializer_class = SlotSerializer
 
 	def get(self,request : HttpRequest):
@@ -146,7 +173,7 @@ class SlotView(APIView):
 			serializer.save()
 			return Response(serializer.data)
 
-class RoomView(APIView):
+class AvailRoomView(APIView): #This view is for viewing only available room views(in a slot)
 	serializer_class = RoomSerializer
 
 	def get(self,request : HttpRequest): #Using query paramteres for datetime, GET /bookings/?start-dt=2025-01-25T14:30:00&end-dt=2025-01-25T15:00:00
@@ -161,8 +188,18 @@ class RoomView(APIView):
 			except:
 				return Response({'error' : 'Use datetime in ISO format'}, status=400)
 
+	
+
+class RoomView(APIView): #This view is for displaying ALL rooms. Also for adding a new room to the db.
+
+	def get(self,request : HttpRequest):
+		Rooms = Room.objects.all()
+		serializer = RoomSerializer(Rooms, many=True)
+		return Response(serializer.data)
+	
 	def post(self, request : HttpRequest):
 		serializer = RoomSerializer(data=request.data)
 		if serializer.is_valid(raise_exception=True):
 			serializer.save()
 			return Response(serializer.data)
+		
