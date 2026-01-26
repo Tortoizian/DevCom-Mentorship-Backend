@@ -1,27 +1,20 @@
 from rest_framework import serializers
 from .models import *
-from django.contrib.auth.models import User
-
-class UserSerializer(serializers.ModelSerializer):
-	class Meta:
-		model = User
-		fields = '__all__'
-
 
 class RoomSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Room
 		fields = ['room_id', 'room_name', 'room_capacity']
 
-		def validate_room_capacity(self, value):
-			if value < 0:
-				raise serializers.ValidationError("Room capacity must be positive.")
-			return value
+	def validate_room_capacity(self, value):
+		if value < 0:
+			raise serializers.ValidationError("Room capacity must be positive.")
+		return value
 
 class StudentSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Student
-		fields = ['rollno', 'student_name', 'student_dept', 'email']
+		fields = ['username', 'student_name', 'student_dept', 'email']
 
 class SlotSerializer(serializers.ModelSerializer):
 	class Meta:
@@ -45,6 +38,7 @@ class SlotSerializer(serializers.ModelSerializer):
 		return data
 
 class BookingSerializer(serializers.ModelSerializer):
+	booking_by = serializers.ReadOnlyField(source="booking_by.username")
 	class Meta:
 		model = Booking
 		fields = ['booking_id', 'booking_room', 'booking_by', 'slot']

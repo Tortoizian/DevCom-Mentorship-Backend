@@ -7,7 +7,6 @@ from .serializers import *
 from rest_framework.response import Response
 from rest_framework import permissions
 from django.db.models import Q
-from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
@@ -18,13 +17,15 @@ from datetime import datetime
 
 @method_decorator(csrf_protect, name='dispatch')
 class CheckAuthenticatedView(APIView):
+	permission_classes = (permissions.AllowAny, )
+
 	def get(self, request : HttpRequest, format=None):
 		try:
-			isAuthenticated = User.is_authenticated
+			isAuthenticated = request.user.is_authenticated
 			if isAuthenticated:
-				return Response({'isAuthenticated':'success'})
+				return Response({'isAuthenticated':'true'})
 			else:
-				return Response({'isAuthenticated':'error'})
+				return Response({'isAuthenticated':'false'})
 		except:
 			return Response({'error': "Could not check authentication status"})
 
@@ -35,16 +36,21 @@ class SignupView(APIView):
 	def post(self, request : HttpRequest, format=None):
 		data = self.request.data
 
-		username = data["username"]
+		rollno = data["rollno"]
+		student_name = data["student_name"]
+		student_dept = data["student_dept"]
+		email = data["email"]
 		password = data["password"]
 		re_password = data["re_password"]
 
 		if password == re_password:
 			try:
-				if User.objects.filter(username=username).exists():
-					return Response({'error': "Username already exists"})
+				if Student.objects.filter(username=rollno).exists():
+					return Response({'error': "rollno already exists"})
+				elif Student.objects.filter(email=email).exists():
+					return Response({'error': "email already exists"})
 				else:
-					user = User.objects.create_user(username=username, password=password)
+					user = Student.objects.create_user(username=rollno, student_name=student_name, student_dept=student_dept, email=email, password=password)
 					user.save()
 					return Response({'success': 'User created successfully!'})
 			except:
@@ -66,14 +72,14 @@ class LoginView(APIView):
 	def post(self, request : HttpRequest, format=None):
 		try:
 			data = self.request.data
-			username = data["username"]
+			rollno = data["rollno"]
 			password = data["password"]
 
-			user = authenticate(username=username, password=password)
+			user = authenticate(username=rollno, password=password)
 
 			if user is not None:
 				login(request, user)
-				return Response({'success': "User authenticated", 'username': username})
+				return Response({'success': "User authenticated", 'rollno': rollno})
 			else:
 				return Response({'error':"Error while authenticating"})
 		except:
@@ -90,9 +96,9 @@ class LogoutView(APIView):
 class DeleteUserView(APIView):
 	def delete(self, request : HttpRequest, format=None):
 		try:
-			user = User.objects.user
+			user = request.user
 
-			user = User.objects.filter(id=user.id).delete()
+			user = Student.objects.filter(username=user.username).delete()
 			return Response({'success': "User deleted successfully"})
 		except:
 			return Response({'error': "Could not delete user"})
@@ -101,9 +107,9 @@ class GetUsersView(APIView):
 	permission_classes  = (permissions.AllowAny, )
 
 	def get(self, request : HttpRequest, format=None):
-		users = User.objects.all()
+		users = Student.objects.all()
 
-		users = UserSerializer(users, many=True)
+		users = StudentSerializer(users, many=True)
 		return Response(users.data)
 
 # Other views
@@ -112,8 +118,9 @@ class StudentView(APIView): # just for testing purposes
 	serializer_class = StudentSerializer
 
 	def get(self, request : HttpRequest):
-		output = [{'rollno': output.rollno, 'student_name': output.student_name, 'student_dept': output.student_dept, 'email': output.email} for output in Student.objects.all()]
-		return Response(output)
+		students = Student.objects.all()
+		serializer = StudentSerializer(students, many=True)
+		return Response(serializer.data)
 	
 	def post(self, request : HttpRequest):
 		serializer = StudentSerializer(data=request.data)
@@ -124,12 +131,9 @@ class StudentView(APIView): # just for testing purposes
 class StudentBookings(APIView): #for viewing a specific student's bookings and making a new booking.
 	serializer_class = BookingSerializer
 
-	def get(self,request : HttpRequest, *args, **kwargs): 
-		rollno = kwargs.get('rollno')
-		if(rollno):
-			bookings = Booking.objects.filter(booking_by=rollno)
-		else:
-			bookings = Booking.objects.all()
+	def get(self,request : HttpRequest, *args, **kwargs):
+		student = request.user
+		bookings = Booking.objects.filter(booking_by=student)
 		serializer=BookingSerializer(bookings, many=True)
 		return Response(serializer.data)
 
@@ -139,7 +143,7 @@ class StudentBookings(APIView): #for viewing a specific student's bookings and m
 			data = serializer.validated_data
 			room = data.get('booking_room')
 			slot = data.get('slot')
-			user = data.get('booking_by')
+			user = request.user
 			#Check 1-Two rooms cannot be booked in overlapping slots
 			#prevent double booking: same room cannot be booked for any overlapping slot duration
 			if Booking.objects.filter(
@@ -157,7 +161,7 @@ class StudentBookings(APIView): #for viewing a specific student's bookings and m
 				Q(slot__start_time__lt=slot.end_time) & Q(slot__end_time__gt=slot.start_time)
 			).exists():
 				return Response({'error' : 'One user cannot make 2 booking in an overlapping duration.'}, status=400)
-			serializer.save()
+			serializer.save(booking_by=user)
 			return Response(serializer.data)
 
 class SlotView(APIView): #optional for now
