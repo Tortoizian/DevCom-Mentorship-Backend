@@ -32,7 +32,6 @@ urlpatterns = [
 	path("get_users/", GetUsersView.as_view()),
 
 	path('', StudentView.as_view(), name='test'), # is not to be present in final version
-	path('bookings/<str:rollno>/', StudentBookings.as_view(), name='student_bookings'),
 	path('bookings/', StudentBookings.as_view(), name='student_bookings'),
 	path('room/', RoomView.as_view(), name='room'),
 	path('slot/', SlotView.as_view(), name='slot'),
