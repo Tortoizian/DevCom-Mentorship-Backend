@@ -23,8 +23,8 @@ class Student(models.Model):
 
 class Slot(models.Model):
 	slot_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-	start_time = models.DateTimeField()
-	end_time = models.DateTimeField()
+	start_time = models.TimeField()
+	end_time = models.TimeField()
 	DAY_CHOICES = [
         ('MON', 'Monday'),
         ('TUE', 'Tuesday'),
@@ -37,7 +37,7 @@ class Slot(models.Model):
 	day = models.CharField(max_length=64,choices=DAY_CHOICES)
 
 	def __str__(self):
-		return (f"Date: {timezone.localtime(self.start_time).strftime('%d-%m-%Y')}, Start Time: {timezone.localtime(self.start_time).strftime('%H:%M')}, End Time: {timezone.localtime(self.end_time).strftime('%H:%M')}")
+		return (f"{self.start_time} to {self.end_time} on {self.day}")
 	
 
 
@@ -46,6 +46,7 @@ class Booking(models.Model):
 	booking_room = models.ForeignKey(Room, on_delete=models.RESTRICT) # references the room_id key
 	booking_by = models.ForeignKey(Student, on_delete=models.RESTRICT) # references the rollno key
 	slot = models.ForeignKey(Slot, on_delete=models.RESTRICT)
+	date = models.DateField()
 
 	def __str__(self):
-		return (f"Room: {self.booking_room.room_name}; Student: {self.booking_by.rollno}; Slot: ({self.slot})")
+		return (f"Room: {self.booking_room.room_name}; Student: {self.booking_by.rollno}; Slot: ({self.slot}); Date:{self.date}")

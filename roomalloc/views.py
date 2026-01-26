@@ -126,7 +126,7 @@ class StudentBookings(APIView): #for viewing a specific student's bookings and m
 
 	def get(self,request : HttpRequest, *args, **kwargs): 
 		rollno = kwargs.get('rollno')
-		if(rollno):
+		if rollno:
 			bookings = Booking.objects.filter(booking_by=rollno)
 		else:
 			bookings = Booking.objects.all()
@@ -140,12 +140,15 @@ class StudentBookings(APIView): #for viewing a specific student's bookings and m
 			room = data.get('booking_room')
 			slot = data.get('slot')
 			user = data.get('booking_by')
+			date = data.get('date')
+
 			#Check 1-Two rooms cannot be booked in overlapping slots
 			#prevent double booking: same room cannot be booked for any overlapping slot duration
 			if Booking.objects.filter(
 				booking_room=room
 			).filter(
-				Q(slot__start_time__lt=slot.end_time) & Q(slot__end_time__gt=slot.start_time)
+				Q(slot__start_time__lt=slot.end_time) & Q(slot__end_time__gt=slot.start_time) & Q(date=date)
+
 			).exists():
 				return Response({'error': 'Room is already booked under an interfering slot.'}, status=400)
 			
@@ -154,7 +157,7 @@ class StudentBookings(APIView): #for viewing a specific student's bookings and m
 			if Booking.objects.filter(
 				booking_by=user
 			).filter(
-				Q(slot__start_time__lt=slot.end_time) & Q(slot__end_time__gt=slot.start_time)
+				Q(slot__start_time__lt=slot.end_time) & Q(slot__end_time__gt=slot.start_time) &Q(date=date)
 			).exists():
 				return Response({'error' : 'One user cannot make 2 booking in an overlapping duration.'}, status=400)
 			serializer.save()
@@ -164,8 +167,9 @@ class SlotView(APIView): #optional for now
 	serializer_class = SlotSerializer
 
 	def get(self,request : HttpRequest):
-		output = [{'slot_id': output.slot_id, 'start_time': output.start_time, 'end_time': output.end_time, 'day': output.day} for output in Slot.objects.all()]
-		return Response(output)
+		slots=Slot.objects.all()
+		serializer = SlotSerializer(slots, many=True)
+		return Response(serializer.data)
 
 	def post(self, request : HttpRequest):
 		serializer = SlotSerializer(data=request.data)
@@ -173,7 +177,7 @@ class SlotView(APIView): #optional for now
 			serializer.save()
 			return Response(serializer.data)
 
-class RoomView(APIView): #This view is for viewing only available room views(in a slot)
+class RoomView(APIView): #Either for viewing all rooms or only available rooms
 	serializer_class = RoomSerializer
 
 	def get(self,request : HttpRequest): #Using query paramteres for datetime, GET /bookings/?start-dt=2025-01-25T14:30:00&end-dt=2025-01-25T15:00:00
@@ -181,7 +185,7 @@ class RoomView(APIView): #This view is for viewing only available room views(in 
 				if request.query_params.get('start-dt'):
 					start_dt = datetime.fromisoformat(request.query_params.get('start-dt'))
 					end_dt=datetime.fromisoformat(request.query_params.get('end-dt'))
-					overlapped_bookings=Booking.objects.filter(Q(slot__start_time__lt=end_dt) & Q(slot__end_time__gt=start_dt)) #getting bookings that overlap with start_dt to end_dt
+					overlapped_bookings=Booking.objects.filter(date=start_dt.date).filter(Q(slot__start_time__lt=end_dt.time) & Q(slot__end_time__gt=start_dt.time)) #getting bookings that overlap with start_dt to end_dt
 					booked_room_ids = overlapped_bookings.values_list('booking_room_id', flat=True)
 					avail_rooms=Room.objects.exclude(room_id__in=booked_room_ids)
 					serializer = RoomSerializer(avail_rooms, many=True)
