@@ -83,7 +83,8 @@ class LoginView(APIView):
 			else:
 				return Response({'error':"Error while authenticating"})
 		except:
-			return Response({'error': "Could not log user in"})
+			return Response({'error': "Could not log user in",'request':request.data})
+			
 
 class LogoutView(APIView):
 	def post(self, request : HttpRequest, format=None):
