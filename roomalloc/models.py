@@ -54,4 +54,4 @@ class Booking(models.Model):
 	date = models.DateField()
 
 	def __str__(self):
-		return (f"Room: {self.booking_room.room_name}; Student: {self.booking_by.rollno}; Slot: ({self.slot}); Date:{self.date}")
+		return (f"Room: {self.booking_room.room_name}; Student: {self.booking_by.username}; Slot: ({self.slot}); Date:{self.date}")
